@@ -1,10 +1,11 @@
 /** Libraries */
-import { Schema, model } from "mongoose";
-
+import { Schema, model, Document } from "mongoose";
 /** Interfaces */
 import { Car } from "../interfaces";
 
-const ItemSchema = new Schema<Car>(
+type CarDocument = Car & Document;
+
+const ItemSchema = new Schema<CarDocument>(
   {
     name: {
       type: String,
