@@ -10,12 +10,14 @@ import { dbConnect } from "./config";
 
 /**Routes */
 import { itemRoutes } from "./routes/item";
+import { authRouter } from "./routes/auth.routes";
 
 class Server {
   private app: Application;
   private port: string;
   private apiPaths = {
     items: "/api/items",
+    auth: "/api/auth",
   };
 
   constructor() {
@@ -44,6 +46,7 @@ class Server {
 
   routes() {
     this.app.use(this.apiPaths.items, itemRoutes);
+    this.app.use(this.apiPaths.auth, authRouter);
   }
 
   listen() {

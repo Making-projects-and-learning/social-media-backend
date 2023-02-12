@@ -1,7 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 import { User } from "../interfaces/user.interface";
 
-type UserDocument = Omit<User, "_id"> & Document;
+type UserDocument = User & Document;
 
 const UserSchema = new Schema<UserDocument>({
   name: {

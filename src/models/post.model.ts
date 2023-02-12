@@ -1,7 +1,7 @@
 import { Types, model, Schema, Document } from "mongoose";
 import { Post } from "../interfaces/post.interface";
 
-type PostDocument = Omit<Post, "_id"> & Document;
+type PostDocument = Post & Document;
 
 const PostSchema = new Schema<PostDocument>({
   title: String,
