@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { check } from "express-validator";
-import { login } from "../controllers/auth.controllers";
+import { login, register } from "../controllers/auth.controllers";
 import { validateFields } from "../middleware";
 
 const router = Router();
@@ -23,6 +23,28 @@ router.post(
     validateFields,
   ],
   login
+);
+
+router.post(
+  "/register",
+  [
+    check("name", "name is required").not().isEmpty(),
+    check(
+      "username",
+      "username is required and it must be at least 6 characters long"
+    ).isLength({
+      min: 6,
+    }),
+    check("email", "Email required and must be a valid email").isEmail(),
+    check(
+      "password",
+      "Password is required and it must be at least 8 characters long"
+    ).isLength({
+      min: 8,
+    }),
+    validateFields,
+  ],
+  register
 );
 
 export { router as authRouter };
