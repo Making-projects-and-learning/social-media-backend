@@ -1,7 +1,7 @@
 import { Types, Document, Schema, model } from "mongoose";
 import { Message } from "../interfaces/message.interface";
 
-type MessageDocument = Omit<Message, "_id"> & Document;
+type MessageDocument = Message & Document;
 
 const MessageSchema = new Schema<MessageDocument>({
   from: {
