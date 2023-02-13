@@ -1,2 +1,2 @@
-export * from './auth'
+export * from './auth.routes'
 export * from './item'

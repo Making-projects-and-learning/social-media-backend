@@ -1,5 +1,14 @@
+/** Libraries */
 import { Request, Response } from "express";
-import { loginService, registerService } from "../services/auth.services";
+
+/** Services */
+import {
+  loginService,
+  registerService,
+  googleLoginService
+} from "../services/auth.services";
+
+/** Utils */
 import { handleError } from "../utils";
 
 const login = async (req: Request, res: Response): Promise<void> => {
@@ -27,4 +36,18 @@ const register = async (req: Request, res: Response): Promise<void> => {
     token,
   });
 };
-export { login, register };
+
+const googleSignIn = async ({ body: { id_token } }: Request, res: Response) => {
+  const data = await googleLoginService(id_token);
+  if (!data) {
+    return handleError(res, "Something Went Wrong", {}, 400);
+  }
+  const { user, token } = data;
+  res.status(200).json({
+    message: "user logged with google",
+    user,
+    token, 
+  });
+};
+
+export { login, register, googleSignIn };

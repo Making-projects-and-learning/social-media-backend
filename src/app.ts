@@ -9,7 +9,7 @@ import logger from "morgan";
 import { dbConnect } from "./config";
 
 /**Routes */
-import { itemRoutes, authRoutes } from "./routes";
+import { itemRoutes, authRouter } from "./routes";
 
 class Server {
   private app: Application;
@@ -45,7 +45,7 @@ class Server {
 
   routes() {
     this.app.use(this.apiPaths.items, itemRoutes);
-    this.app.use(this.apiPaths.auth, authRoutes);
+    this.app.use(this.apiPaths.auth, authRouter);
   }
 
   listen() {

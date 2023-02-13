@@ -1,7 +1,16 @@
+/** Libraries */
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
+
+/** Models */
 import UserModel from "../models/user.models";
+
+/** Utils */
+import { generateToken, googleVerify } from "../utils";
+
+/** Interfaces */
 import { User } from "../interfaces/user.interface";
+import { GooglePayload } from "../interfaces/auth.interface";
 
 type LoginBody = {
   username: string;
@@ -69,4 +78,51 @@ const registerService = async ({
     return null;
   }
 };
-export { loginService, registerService };
+
+const googleLoginService = async (id_token: string): Promise<AuthReturnType> => {
+
+  const credential = await googleVerify(id_token) as unknown as GooglePayload
+
+  if (!credential) throw new Error("Google verification has failed!");
+
+  const {
+    email,
+    given_name,
+  } = credential;
+
+  try {
+    const user = await UserModel.findOne({ email: email });
+
+    if (!user) {
+      const data = {
+        name: given_name,
+        username: given_name,
+        email: email,
+        password: ":P",
+      };
+
+      const userNew = new UserModel(data);
+
+      const userNewFinish = await userNew.save()
+
+      const token = await generateToken(userNewFinish.email);
+
+      return {
+        user: userNewFinish,
+        token,
+      };
+    }
+
+    const token = await generateToken(user.email);
+
+    return {
+      user,
+      token,
+    };
+  } catch (error) {
+    console.log(error)
+    return null;
+  }
+};
+
+export { loginService, registerService, googleLoginService };
