@@ -79,6 +79,17 @@ const registerService = async ({
   }
 };
 
+const renewService = async (user: User): Promise<AuthReturnType> => {
+  const { email } = user;
+
+  const token = await generateToken(email);
+
+  return {
+    user,
+    token,
+  };
+};
+
 const googleLoginService = async (id_token: string): Promise<AuthReturnType> => {
 
   const credential = await googleVerify(id_token) as unknown as GooglePayload
@@ -125,4 +136,4 @@ const googleLoginService = async (id_token: string): Promise<AuthReturnType> => 
   }
 };
 
-export { loginService, registerService, googleLoginService };
+export { loginService, registerService, googleLoginService, renewService };

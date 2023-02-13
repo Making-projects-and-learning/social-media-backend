@@ -3,10 +3,15 @@ import { Router } from "express";
 import { check } from "express-validator";
 
 /** Controllers */
-import { login, register, googleSignIn } from "../controllers/auth.controllers";
+import {
+  login,
+  register,
+  googleSignIn,
+  tokenRevalidate
+} from "../controllers/auth.controllers";
 
 /** Middlewares */
-import { validateFields } from "../middleware";
+import { validateFields, jwtValidate } from "../middleware";
 
 const router = Router();
 
@@ -55,6 +60,11 @@ router.post(
 router.post('/google', [
   check('id_token', 'id_token is required.').not().isEmpty(),
   validateFields
-], googleSignIn );
+], googleSignIn);
+
+router.get('/renew', [
+  jwtValidate,
+  validateFields
+], tokenRevalidate);
 
 export { router as authRouter };

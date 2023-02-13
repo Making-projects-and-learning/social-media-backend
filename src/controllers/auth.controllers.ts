@@ -5,7 +5,8 @@ import { Request, Response } from "express";
 import {
   loginService,
   registerService,
-  googleLoginService
+  googleLoginService,
+  renewService
 } from "../services/auth.services";
 
 /** Utils */
@@ -50,4 +51,17 @@ const googleSignIn = async ({ body: { id_token } }: Request, res: Response) => {
   });
 };
 
-export { login, register, googleSignIn };
+const tokenRevalidate = async (req: Request, res: Response) => {
+  const data = await renewService(req.user[0]);
+  if (!data) {
+    return handleError(res, "Something Went Wrong", {}, 400);
+  }
+  const { user, token } = data;
+  res.status(200).json({
+    message: "token renewed",
+    user,
+    token, 
+  });
+};
+
+export { login, register, googleSignIn, tokenRevalidate };

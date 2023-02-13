@@ -9,13 +9,22 @@ import logger from "morgan";
 import { dbConnect } from "./config";
 
 /**Routes */
-import { itemRoutes, authRouter } from "./routes";
+import { authRouter } from "./routes";
+import { User } from "./interfaces/user.interface";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User | any
+      email?: string
+    }
+  }
+}
 
 class Server {
   private app: Application;
   private port: string;
   private apiPaths = {
-    items: "/api/items",
     auth: "/api/auth",
   };
 
@@ -44,7 +53,6 @@ class Server {
   }
 
   routes() {
-    this.app.use(this.apiPaths.items, itemRoutes);
     this.app.use(this.apiPaths.auth, authRouter);
   }
 
