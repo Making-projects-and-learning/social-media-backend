@@ -7,11 +7,11 @@ export interface User {
   username: string;
   email: string;
   password: string;
-  description: string;
-  posts: Post[];
-  friends: User[];
-  groups: Room[];
-  individualRooms: Room[];
-  likedPosts: Post[];
+  description?: string;
+  posts?: Post[];
+  friends?: User[];
+  groups?: Room[];
+  individualRooms?: Room[];
+  likedPosts?: Post[];
   online: boolean;
 }

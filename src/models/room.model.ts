@@ -1,7 +1,7 @@
 import { Types, model, Schema, Document } from "mongoose";
 import { Room } from "../interfaces/room.interface";
 
-type RoomDocument = Omit<Room, "_id"> & Document;
+type RoomDocument = Room & Document;
 const RoomSchema = new Schema<RoomDocument>({
   users: [
     {
