@@ -9,8 +9,7 @@ import logger from "morgan";
 import { dbConnect } from "./config";
 
 /**Routes */
-import { itemRoutes } from "./routes/item";
-import { authRouter } from "./routes/auth.routes";
+import { itemRoutes, authRouter } from "./routes";
 
 class Server {
   private app: Application;
