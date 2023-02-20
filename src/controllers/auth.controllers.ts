@@ -6,7 +6,7 @@ import {
   loginService,
   registerService,
   googleLoginService,
-  renewService
+  renewService,
 } from "../services/auth.services";
 
 /** Utils */
@@ -47,7 +47,7 @@ const googleSignIn = async ({ body: { id_token } }: Request, res: Response) => {
   res.status(200).json({
     message: "user logged with google",
     user,
-    token, 
+    token,
   });
 };
 
@@ -60,7 +60,7 @@ const tokenRevalidate = async (req: Request, res: Response) => {
   res.status(200).json({
     message: "token renewed",
     user,
-    token, 
+    token,
   });
 };
 
