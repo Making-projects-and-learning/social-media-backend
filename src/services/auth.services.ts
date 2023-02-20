@@ -90,16 +90,14 @@ const renewService = async (user: User): Promise<AuthReturnType> => {
   };
 };
 
-const googleLoginService = async (id_token: string): Promise<AuthReturnType> => {
-
-  const credential = await googleVerify(id_token) as unknown as GooglePayload
+const googleLoginService = async (
+  id_token: string
+): Promise<AuthReturnType> => {
+  const credential = (await googleVerify(id_token)) as unknown as GooglePayload;
 
   if (!credential) throw new Error("Google verification has failed!");
 
-  const {
-    email,
-    given_name,
-  } = credential;
+  const { email, given_name } = credential;
 
   try {
     const user = await UserModel.findOne({ email: email });
@@ -114,7 +112,7 @@ const googleLoginService = async (id_token: string): Promise<AuthReturnType> => 
 
       const userNew = new UserModel(data);
 
-      const userNewFinish = await userNew.save()
+      const userNewFinish = await userNew.save();
 
       const token = await generateToken(userNewFinish.email);
 
@@ -131,7 +129,7 @@ const googleLoginService = async (id_token: string): Promise<AuthReturnType> => 
       token,
     };
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return null;
   }
 };

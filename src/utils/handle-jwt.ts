@@ -13,9 +13,9 @@ export const generateToken = (email: string): string => {
 type VerifyTokenType = {
   email: string;
   iat: number;
-}
+};
 
 export const verifyToken = (jwt: string): VerifyTokenType => {
-  const isOk = verify(jwt, JWT_SECRET) as VerifyTokenType
+  const isOk = verify(jwt, JWT_SECRET) as VerifyTokenType;
   return isOk;
 };

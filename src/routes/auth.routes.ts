@@ -7,7 +7,7 @@ import {
   login,
   register,
   googleSignIn,
-  tokenRevalidate
+  tokenRevalidate,
 } from "../controllers/auth.controllers";
 
 /** Middlewares */
@@ -57,14 +57,12 @@ router.post(
   register
 );
 
-router.post('/google', [
-  check('id_token', 'id_token is required.').not().isEmpty(),
-  validateFields
-], googleSignIn);
+router.post(
+  "/google",
+  [check("id_token", "id_token is required.").not().isEmpty(), validateFields],
+  googleSignIn
+);
 
-router.get('/renew', [
-  jwtValidate,
-  validateFields
-], tokenRevalidate);
+router.get("/renew", [jwtValidate, validateFields], tokenRevalidate);
 
 export { router as authRouter };
