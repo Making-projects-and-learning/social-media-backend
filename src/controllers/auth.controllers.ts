@@ -12,7 +12,13 @@ import {
 /** Utils */
 import { handleError } from "../utils";
 
-const login = async (req: Request, res: Response): Promise<void> => {
+/** Interfaces */
+import { User } from "../interfaces/user.interface";
+interface CustomRequest extends Request {
+  user?: User | any;
+}
+
+const login = async (req: CustomRequest, res: Response): Promise<void> => {
   const data = await loginService(req.body);
   if (!data) {
     return handleError(res, "Inavlid username or password", {}, 403);
@@ -25,7 +31,7 @@ const login = async (req: Request, res: Response): Promise<void> => {
   });
 };
 
-const register = async (req: Request, res: Response): Promise<void> => {
+const register = async (req: CustomRequest, res: Response): Promise<void> => {
   const data = await registerService(req.body);
   if (!data) {
     return handleError(res, "Something Went Wrong", {}, 400);
@@ -38,7 +44,10 @@ const register = async (req: Request, res: Response): Promise<void> => {
   });
 };
 
-const googleSignIn = async ({ body: { id_token } }: Request, res: Response) => {
+const googleSignIn = async (
+  { body: { id_token } }: CustomRequest,
+  res: Response
+) => {
   const data = await googleLoginService(id_token);
   if (!data) {
     return handleError(res, "Something Went Wrong", {}, 400);
@@ -51,7 +60,7 @@ const googleSignIn = async ({ body: { id_token } }: Request, res: Response) => {
   });
 };
 
-const tokenRevalidate = async (req: Request, res: Response) => {
+const tokenRevalidate = async (req: CustomRequest, res: Response) => {
   const data = await renewService(req.user[0]);
   if (!data) {
     return handleError(res, "Something Went Wrong", {}, 400);
