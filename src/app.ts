@@ -13,7 +13,7 @@ import { Server as SocketServer, type Socket } from "socket.io";
 import { dbConnect } from "./config";
 
 /** Routes */
-import { authRouter } from "./routes";
+import { authRouter, postRouter } from "./routes";
 
 /** Sockets */
 import { Sockets } from "./sockets";
@@ -28,6 +28,7 @@ class Server {
   private port: string;
   private apiPaths = {
     auth: "/api/auth",
+    post: "/api/post",
   };
 
   constructor() {
@@ -67,6 +68,7 @@ class Server {
 
   routes() {
     this.app.use(this.apiPaths.auth, authRouter);
+    this.app.use(this.apiPaths.post, postRouter);
   }
 
   sockets() {

@@ -4,7 +4,6 @@ import { Post } from "../interfaces/post.interface";
 type PostDocument = Post & Document;
 
 const PostSchema = new Schema<PostDocument>({
-  title: String,
   description: String,
   imageUrl: String,
   owner: {

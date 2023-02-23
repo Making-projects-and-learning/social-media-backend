@@ -1,11 +1,12 @@
 /** Libraries */
+import { Request, Response } from "express";
 import { type Socket } from "socket.io";
 
 /** Services */
 import { createPostService, getPostsService } from "../services/post.services";
 
 /** Utils */
-import { socketEvents } from "../utils";
+import { handleError, socketEvents } from "../utils";
 
 /** Interfaces */
 import { Post } from "../interfaces/post.interface";
@@ -22,23 +23,23 @@ export const postController = (socket: CustomSocket) => {
   const { user } = socket;
 
   /** Create a new post */
-  socket.on(POST.getAll, async () => {
-    const posts = await getPostsService();
-    if (posts) {
-      socket.emit(POST.getAll, { posts });
-    } else {
-      socket.emit(NOTIFICATION.errorGettingThePosts);
-    }
-  });
-
-  /** Create a new post */
   socket.on(POST.create, async (post: Partial<Post>) => {
-    const isCreated = await createPostService(post, user._id);
-    if (isCreated) {
-      console.log("POST CREATED");
+    const postDB = await createPostService(post, user._id);
+    if (postDB) {
       socket.broadcast.emit(NOTIFICATION.newPostsAvailable);
+      socket.emit(POST.create, postDB);
     } else {
       socket.emit(NOTIFICATION.errorToCreatePost);
     }
+  });
+};
+
+export const getAllPosts = async (_req: Request, res: Response) => {
+  const posts = await getPostsService();
+  if (!posts) {
+    return handleError(res, "Something Went Wrong", {}, 400);
+  }
+  res.status(200).json({
+    posts,
   });
 };
