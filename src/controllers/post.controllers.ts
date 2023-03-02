@@ -3,7 +3,13 @@ import { Request, Response } from "express";
 import { type Socket } from "socket.io";
 
 /** Services */
-import { createPostService, getPostsService } from "../services/post.services";
+import {
+  createPostService,
+  deletePostService,
+  getPostsService,
+  likePostService,
+  unLikePostService,
+} from "../services/post.services";
 
 /** Utils */
 import { handleError, socketEvents } from "../utils";
@@ -26,16 +32,56 @@ export const postController = (socket: CustomSocket) => {
   socket.on(POST.create, async (post: Partial<Post>) => {
     const postDB = await createPostService(post, user._id);
     if (postDB) {
-      socket.broadcast.emit(NOTIFICATION.newPostsAvailable);
+      console.log("NOTIFICATIONS SENDED");
+      socket.broadcast.emit(NOTIFICATION.newPostsAvailable, postDB);
       socket.emit(POST.create, postDB);
     } else {
       socket.emit(NOTIFICATION.errorToCreatePost);
     }
   });
+
+  /** Delete a post */
+  socket.on(POST.delete, async (post_id: string) => {
+    const postDB = await deletePostService(post_id, user._id);
+    if (postDB) {
+      console.log("POST DELETED");
+      socket.broadcast.emit(POST.delete, postDB);
+      socket.emit(POST.delete, postDB);
+    } else {
+      socket.emit(NOTIFICATION.errorToDeletePost);
+    }
+  });
+
+  /** Likes */
+  /** Like */
+  socket.on(POST.like, async (post_id: string) => {
+    const postDB = await likePostService(post_id, user._id);
+    if (postDB) {
+      console.log("POST LIKED");
+      socket.broadcast.emit(POST.like, { postDB, user_name: user.username });
+      socket.emit(POST.like, { postDB, user_name: user.username });
+    } else {
+      // socket.emit(NOTIFICATION.errorToDeletePost);
+    }
+  });
+
+  /** UnLike */
+  socket.on(POST.unLike, async (post_id: string) => {
+    const postDB = await unLikePostService(post_id, user._id);
+    if (postDB) {
+      console.log("POST UNLIKED");
+      socket.broadcast.emit(POST.unLike, postDB);
+      socket.emit(POST.unLike, postDB);
+    } else {
+      // socket.emit(NOTIFICATION.errorToDeletePost);
+    }
+  });
 };
 
-export const getAllPosts = async (_req: Request, res: Response) => {
-  const posts = await getPostsService();
+/** get all posts */
+export const getAllPosts = async (req: Request, res: Response) => {
+  const { skip, limit } = req.query;
+  const posts = await getPostsService(Number(skip), Number(limit));
   if (!posts) {
     return handleError(res, "Something Went Wrong", {}, 400);
   }
