@@ -18,17 +18,17 @@ const UserSchema = new Schema<UserDocument>({
     required: true,
     unique: true,
   },
+  picture: {
+    type: String,
+    required: true,
+    default:
+      "https://res.cloudinary.com/the-kings-company/image/upload/v1671396595/user-ecommerce/Avatar-Profile-PNG-Free-Image_yeonm0.png",
+  },
   password: {
     type: String,
     required: true,
   },
   description: String,
-  posts: [
-    {
-      type: Types.ObjectId,
-      ref: "posts",
-    },
-  ],
   friends: [
     {
       type: Types.ObjectId,
@@ -47,10 +47,28 @@ const UserSchema = new Schema<UserDocument>({
       ref: "rooms",
     },
   ],
+  posts: [
+    {
+      type: Types.ObjectId,
+      ref: "posts",
+    },
+  ],
   likedPosts: [
     {
       type: Types.ObjectId,
       ref: "posts",
+    },
+  ],
+  comments: [
+    {
+      type: Types.ObjectId,
+      ref: "comments",
+    },
+  ],
+  likedComments: [
+    {
+      type: Types.ObjectId,
+      ref: "comments",
     },
   ],
   online: {
@@ -58,7 +76,6 @@ const UserSchema = new Schema<UserDocument>({
     default: false,
   },
 });
-
 
 UserSchema.methods.toJSON = function () {
   const { __v, password, ...user } = this.toObject();
