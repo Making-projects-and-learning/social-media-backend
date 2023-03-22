@@ -97,7 +97,7 @@ const googleLoginService = async (
 
   if (!credential) throw new Error("Google verification has failed!");
 
-  const { email, given_name } = credential;
+  const { email, given_name, picture } = credential;
 
   try {
     const user = await UserModel.findOne({ email: email });
@@ -107,6 +107,7 @@ const googleLoginService = async (
         name: given_name,
         username: given_name,
         email: email,
+        picture: picture,
         password: ":P",
       };
 
