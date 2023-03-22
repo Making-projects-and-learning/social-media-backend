@@ -20,6 +20,12 @@ const PostSchema = new Schema<PostDocument>({
       ref: "users",
     },
   ],
+  comments: [
+    {
+      type: Types.ObjectId,
+      ref: "comments",
+    },
+  ],
   createdAt: {
     type: Date,
     required: [true, 'Property "createAt" is required.'],

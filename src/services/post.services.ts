@@ -5,28 +5,42 @@ import mongoose from "mongoose";
 import PostModel from "../models/post.model";
 import UserModel from "../models/user.models";
 
+/** Utils */
+import {
+  deleteAllComments,
+  getPostUserComment,
+  deletePostRefs,
+  deleteImage,
+} from "../utils";
+
 /** Interfaces */
-import { Post } from "../interfaces/post.interface";
-import { User } from "../interfaces/user.interface";
+import { NonPopulatedUser, User } from "../interfaces/user.interface";
+import {
+  NonPopulatedPost,
+  Post,
+  TypeOfDelete,
+} from "../interfaces/post.interface";
 
-interface PopulatedPost extends Omit<Post, "owner"> {
-  owner: User;
-}
-
-interface DeletedPost extends Omit<Post, "owner"> {
-  owner: string;
-}
+/** Populate options */
+const optionsCommentsPopulate = {
+  path: "comments",
+  options: { sort: [{ createdAt: "desc" }] },
+  populate: {
+    path: "owner",
+  },
+};
 
 const getPostsService = async (
   skip: number,
   limit: number
 ): Promise<Post[] | null> => {
   try {
-    const posts: Post[] = (await PostModel.find()
+    const posts: Post[] = await PostModel.find()
       .sort({ ["createdAt"]: "desc" })
       .skip(skip)
       .limit(limit)
-      .populate("owner")) as PopulatedPost[];
+      .populate("owner")
+      .populate(optionsCommentsPopulate);
 
     return posts ? posts : null;
   } catch (error) {
@@ -48,11 +62,19 @@ const createPostService = async (
     });
     const postCreated: Post = await newPost.save();
 
-    const postDB: PopulatedPost = (await PostModel.findById(
-      postCreated._id
-    ).populate("owner")) as PopulatedPost;
+    const postDB: Post | null = await PostModel.findById(postCreated._id)
+      .populate("owner")
+      .populate(optionsCommentsPopulate);
 
-    return postDB ? postDB : false;
+    if (postDB) {
+      const userDB: NonPopulatedUser | null = await UserModel.findOneAndUpdate(
+        { _id: userId },
+        { $push: { posts: postDB._id } },
+        { new: true }
+      );
+      return postDB && userDB ? postDB : false;
+    }
+    return false;
   } catch (error) {
     console.log(error);
     return false;
@@ -61,19 +83,34 @@ const createPostService = async (
 
 const deletePostService = async (
   post_id: string,
-  userId: string
+  userId: string,
+  typeOfDelete: TypeOfDelete = "post"
 ): Promise<boolean | Post> => {
   try {
-    const postDB: DeletedPost | null = await PostModel.findById(post_id);
-    if (postDB && userId.toString() === postDB.owner.toString()) {
-      const postDeleted: Post | null = await PostModel.findByIdAndDelete(
-        post_id
-      );
+    const postDB: NonPopulatedPost | null = await PostModel.findById(post_id);
 
-      return postDeleted ? postDeleted : false;
-    } else {
-      return false;
+    if (postDB?.imageUrl) {
+      const isDeleted = await deleteImage(postDB?.imageUrl);
+      if (!isDeleted) return false;
     }
+    if (
+      (postDB && userId.toString() === postDB.owner.toString()) ||
+      (postDB && typeOfDelete === "user")
+    ) {
+      const areCommentsDeleted = await deleteAllComments(
+        postDB,
+        userId,
+        typeOfDelete
+      );
+      const areRefsDeleted = await deletePostRefs(postDB, typeOfDelete);
+      if (areCommentsDeleted && areRefsDeleted) {
+        const postDeleted: Post | null = await PostModel.findByIdAndDelete(
+          post_id
+        );
+        return postDeleted ? postDeleted : false;
+      }
+    }
+    return false;
   } catch (error) {
     console.log(error);
     return false;
@@ -86,44 +123,26 @@ const likePostService = async (
   userId: string
 ): Promise<boolean | Post> => {
   try {
-    const [postDB, userDB] = await Promise.all([
-      PostModel.findById(post_id),
-
-      UserModel.findById(userId),
-    ]);
+    const { postDB, userDB } = await getPostUserComment(post_id, userId);
 
     if (postDB && userDB) {
       /** If the post is already on the user list return false */
       if (userDB?.likedPosts!.includes(postDB?._id.toString())) return false;
 
-      const newUserData = {
-        _id: userDB._id,
-        name: userDB.name,
-        username: userDB.username,
-        email: userDB.email,
-        password: userDB.password,
-        posts: userDB.posts,
-        friends: userDB.friends,
-        groups: userDB.groups,
-        individualRooms: userDB.individualRooms,
-        online: userDB.online,
-        likedPosts: [...userDB?.likedPosts!, postDB._id],
-      };
-
-      const newPostData = {
-        _id: postDB._id,
-        description: postDB.description,
-        owner: postDB.owner,
-        createdAt: postDB.createdAt,
-        likedBy: [...postDB?.likedBy!, userDB._id],
-      };
-
       const [updatedPost, _updatedUser] = await Promise.all([
-        PostModel.findByIdAndUpdate(post_id, newPostData, {
-          new: true,
-        }).populate("owner"),
+        PostModel.findOneAndUpdate(
+          { _id: postDB._id },
+          { $push: { likedBy: userDB._id } },
+          { new: true }
+        )
+          .populate("owner")
+          .populate(optionsCommentsPopulate) as unknown as Post | null,
 
-        UserModel.findByIdAndUpdate(userDB._id, newUserData, { new: true }),
+        UserModel.findOneAndUpdate(
+          { _id: userDB._id },
+          { $push: { likedPosts: postDB._id } },
+          { new: true }
+        ).populate("comments") as unknown as User | null,
       ]);
 
       return updatedPost ? updatedPost : false;
@@ -142,45 +161,23 @@ const unLikePostService = async (
   userId: string
 ): Promise<boolean | Post> => {
   try {
-    const [postDB, userDB] = await Promise.all([
-      PostModel.findById(post_id),
-
-      UserModel.findById(userId),
-    ]);
+    const { postDB, userDB } = await getPostUserComment(post_id, userId);
 
     if (postDB && userDB) {
-      const newUserData = {
-        _id: userDB._id,
-        name: userDB.name,
-        username: userDB.username,
-        email: userDB.email,
-        password: userDB.password,
-        posts: userDB.posts,
-        friends: userDB.friends,
-        groups: userDB.groups,
-        individualRooms: userDB.individualRooms,
-        online: userDB.online,
-        likedPosts: userDB?.likedPosts!.filter(
-          (e) => e.toString() !== postDB._id.toString()
-        ),
-      };
-
-      const newPostData = {
-        _id: postDB._id,
-        description: postDB.description,
-        owner: postDB.owner,
-        createdAt: postDB.createdAt,
-        likedBy: postDB?.likedBy!.filter(
-          (e) => e.toString() !== userDB._id.toString()
-        ),
-      };
-
       const [updatedPost, _updatedUser] = await Promise.all([
-        PostModel.findByIdAndUpdate(post_id, newPostData, {
-          new: true,
-        }).populate("owner"),
+        PostModel.findOneAndUpdate(
+          { _id: postDB._id },
+          { $pull: { likedBy: userDB._id } },
+          { new: true }
+        )
+          .populate("owner")
+          .populate(optionsCommentsPopulate) as unknown as Post | null,
 
-        UserModel.findByIdAndUpdate(userDB._id, newUserData, { new: true }),
+        UserModel.findOneAndUpdate(
+          { _id: userDB._id },
+          { $pull: { likedPosts: postDB._id } },
+          { new: true }
+        ).populate("comments") as unknown as User | null,
       ]);
 
       return updatedPost ? updatedPost : false;

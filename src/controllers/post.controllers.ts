@@ -42,7 +42,7 @@ export const postController = (socket: CustomSocket) => {
 
   /** Delete a post */
   socket.on(POST.delete, async (post_id: string) => {
-    const postDB = await deletePostService(post_id, user._id);
+    const postDB = await deletePostService(post_id, user._id, "post");
     if (postDB) {
       console.log("POST DELETED");
       socket.broadcast.emit(POST.delete, postDB);
