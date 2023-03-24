@@ -26,7 +26,7 @@ const optionsCommentsPopulate = {
   path: "comments",
   options: { sort: [{ createdAt: "desc" }] },
   populate: {
-    path: "owner",
+    path: "owner likedBy",
   },
 };
 
@@ -52,7 +52,10 @@ const createCommentService = async (
     if (postDB && userDB) {
       /** Populate comment and update post and user */
       const [commentDB, updatedPost, updatedUser] = await Promise.all([
-        CommentModel.findById(commentCreated._id).populate("owner"),
+        CommentModel.findById(commentCreated._id)
+          .populate("owner")
+          .populate("post")
+          .populate("likedBy"),
 
         PostModel.findOneAndUpdate(
           { _id: postDB._id },
@@ -60,6 +63,7 @@ const createCommentService = async (
           { new: true }
         )
           .populate("owner")
+          .populate("likedBy")
           .populate(optionsCommentsPopulate) as unknown as Post | null,
 
         UserModel.findOneAndUpdate(
@@ -91,7 +95,7 @@ const deleteCommentService = async (
   comment_id: string,
   userId: string,
   typeOfDelete: TypeOfDelete
-): Promise<boolean | Post> => {
+): Promise<boolean | Omit<CommentServiceReturn, "userDB">> => {
   try {
     /** We search the comment in database */
     const commentDB: NonPopulatedComment | null = await CommentModel.findById(
@@ -109,17 +113,24 @@ const deleteCommentService = async (
     ) {
       const wereDeleted = await deleteCommentRefs(commentDB);
       if (wereDeleted) {
-        const [postDB, _commentDeleted] = await Promise.all([
+        const [postDB, commentDeleted] = await Promise.all([
           PostModel.findById(commentDB.post)
             .populate("owner")
+            .populate("likedBy")
             .populate(optionsCommentsPopulate) as unknown as Post | null,
 
-          CommentModel.findByIdAndDelete(
-            comment_id
-          ) as unknown as NonPopulatedComment | null,
+          CommentModel.findByIdAndDelete(comment_id)
+            .populate("owner")
+            .populate("post")
+            .populate("likedBy") as unknown as Comment | null,
         ]);
 
-        return postDB ? postDB : false;
+        return postDB && commentDeleted
+          ? {
+              postDB,
+              commentDB: commentDeleted,
+            }
+          : false;
       }
     }
     return false;
@@ -134,7 +145,7 @@ const deleteCommentService = async (
 const likeCommentService = async (
   commentId: string,
   userId: string
-): Promise<boolean | Omit<CommentServiceReturn, "commentDB">> => {
+): Promise<boolean | CommentServiceReturn> => {
   try {
     /** React comment and user from DB */
     const { commentDB, userDB } = await getPostUserComment(
@@ -148,12 +159,15 @@ const likeCommentService = async (
       if (userDB?.likedComments!.includes(commentDB?._id.toString()))
         return false;
 
-      const [_updatedComment, updatedUser] = await Promise.all([
+      const [updatedComment, updatedUser] = await Promise.all([
         CommentModel.findOneAndUpdate(
           { _id: commentDB._id },
           { $push: { likedBy: userDB._id } },
           { new: true }
-        ) as unknown as Comment | null,
+        )
+          .populate("owner")
+          .populate("post")
+          .populate("likedBy") as unknown as Comment | null,
 
         UserModel.findOneAndUpdate(
           { _id: userDB._id },
@@ -165,11 +179,13 @@ const likeCommentService = async (
       /** Read the post already updated (for populated matter) */
       const postDB = await PostModel.findById(commentDB.post)
         .populate("owner")
+        .populate("likedBy")
         .populate(optionsCommentsPopulate);
 
-      if (postDB && updatedUser) {
+      if (postDB && updatedUser && updatedComment) {
         return {
           postDB,
+          commentDB: updatedComment,
           userDB: updatedUser,
         };
       } else {
@@ -215,6 +231,7 @@ const unLikeCommentService = async (
       /** Read the post already updated */
       const postDB = await PostModel.findById(commentDB.post)
         .populate("owner")
+        .populate("likedBy")
         .populate(optionsCommentsPopulate);
 
       if (postDB && updatedUser) {
