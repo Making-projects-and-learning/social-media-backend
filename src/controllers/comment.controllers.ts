@@ -32,10 +32,15 @@ export const commentController = (socket: CustomSocket) => {
   /** Make a comment */
   socket.on(POST.createComment, async (post_id: string, comment: Comment) => {
     const data = await createCommentService(comment, user._id, post_id);
-    if (data) {
+    if (typeof data === "boolean") return;
+    const { postDB } = data;
+    if (postDB) {
       console.log("Comment maked");
-      socket.broadcast.emit(POST.createComment, data);
-      socket.emit(POST.createComment, data);
+      socket.broadcast.emit(POST.createComment, {
+        postDB,
+        user_name: user.username,
+      });
+      socket.emit(POST.createComment, { postDB, user_name: user.username });
     } else {
       // socket.emit(NOTIFICATION.errorToDeletePost);
     }
@@ -43,11 +48,21 @@ export const commentController = (socket: CustomSocket) => {
 
   /** Delete a comment */
   socket.on(POST.deleteComment, async (comment_id: string) => {
-    const postDB = await deleteCommentService(comment_id, user._id, "comment");
+    const data = await deleteCommentService(comment_id, user._id, "comment");
+    if (typeof data === "boolean") return;
+    const { postDB, commentDB } = data;
     if (postDB) {
       console.log("Comment deleted");
-      socket.broadcast.emit(POST.deleteComment, postDB);
-      socket.emit(POST.deleteComment, postDB);
+      socket.broadcast.emit(POST.deleteComment, {
+        postDB,
+        commentDB,
+        user_name: user.username,
+      });
+      socket.emit(POST.deleteComment, {
+        postDB,
+        commentDB,
+        user_name: user.username,
+      });
     } else {
       // socket.emit(NOTIFICATION.errorToDeletePost);
     }
@@ -57,10 +72,20 @@ export const commentController = (socket: CustomSocket) => {
   /** Like */
   socket.on(POST.likeComment, async (commentId: string) => {
     const data = await likeCommentService(commentId, user._id);
-    if (data) {
+    if (typeof data === "boolean") return;
+    const { postDB, commentDB } = data;
+    if (postDB) {
       console.log("COMMENT LIKED");
-      socket.broadcast.emit(POST.likeComment, data);
-      socket.emit(POST.likeComment, data);
+      socket.broadcast.emit(POST.likeComment, {
+        postDB,
+        commentDB,
+        user_name: user.username,
+      });
+      socket.emit(POST.likeComment, {
+        postDB,
+        commentDB,
+        user_name: user.username,
+      });
     } else {
       // socket.emit(NOTIFICATION.errorToDeletePost);
     }

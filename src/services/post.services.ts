@@ -26,7 +26,7 @@ const optionsCommentsPopulate = {
   path: "comments",
   options: { sort: [{ createdAt: "desc" }] },
   populate: {
-    path: "owner",
+    path: "owner likedBy",
   },
 };
 
@@ -40,6 +40,7 @@ const getPostsService = async (
       .skip(skip)
       .limit(limit)
       .populate("owner")
+      .populate("likedBy")
       .populate(optionsCommentsPopulate);
 
     return posts ? posts : null;
@@ -64,6 +65,7 @@ const createPostService = async (
 
     const postDB: Post | null = await PostModel.findById(postCreated._id)
       .populate("owner")
+      .populate("likedBy")
       .populate(optionsCommentsPopulate);
 
     if (postDB) {
@@ -136,6 +138,7 @@ const likePostService = async (
           { new: true }
         )
           .populate("owner")
+          .populate("likedBy")
           .populate(optionsCommentsPopulate) as unknown as Post | null,
 
         UserModel.findOneAndUpdate(
@@ -171,6 +174,7 @@ const unLikePostService = async (
           { new: true }
         )
           .populate("owner")
+          .populate("likedBy")
           .populate(optionsCommentsPopulate) as unknown as Post | null,
 
         UserModel.findOneAndUpdate(
